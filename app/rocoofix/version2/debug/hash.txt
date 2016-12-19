@@ -1,0 +1,4 @@
+com/dodola/rocoosample/a.class:d009d75b91d1310eb943703f58d07da61f4aba6a
+com/dodola/rocoosample/b.class:717f65af13386daccc67aa867f177bbaaa4d5885
+com/dodola/rocoosample/MainActivity.class:fabc93a7bdd6c44fbb12c45f9af6bdc94e396273
+com/dodola/rocoosample/a/a.class:d851430bac78251f28c1514c551b9a51c653a6a4
