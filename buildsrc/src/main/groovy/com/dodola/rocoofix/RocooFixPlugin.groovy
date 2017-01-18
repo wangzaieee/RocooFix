@@ -50,7 +50,7 @@ class RocooFixPlugin implements Plugin<Project> {
             def excludeClass = rocooConfig.excludeClass
             if (rocooConfig.enable) {
 
-                variants.all { variant ->
+                variants.all { variant ->  //遍历所有的变种，比如release和debug
 
 
                     if(!variant.getBuildType().isMinifyEnabled()){
@@ -59,6 +59,8 @@ class RocooFixPlugin implements Plugin<Project> {
                     }
 
 
+                    //判断gradle的版本是1.4.0之前（有"dexTask"和"proguardTask"）还是之后->
+                    // ->（之前的task都被取消了，ps:可以自定义transform,但是不好解决混淆的情况，transformClassesWithDexForDebug和transformClassesAndResourcesWithProguardForDebug之间插入task也是阔以滴）
                     def preDexTask = project.tasks.findByName(RocooUtils.getPreDexTaskName(project, variant))
                     //transformClassesWithDexForDebug
                     def dexTask = project.tasks.findByName(RocooUtils.getDexTaskName(project, variant))
@@ -66,12 +68,13 @@ class RocooFixPlugin implements Plugin<Project> {
                     def proguardTask = project.tasks.findByName(RocooUtils.getProGuardTaskName(project, variant))
 //                    def processManifestTask = project.tasks.findByName(RocooUtils.getProcessManifestTaskName(project, variant))
 
-
-
+                    //获取manifest文件
                     def manifestFile = variant.outputs.processManifest.manifestOutputFile[0]
 
+                    //使用之前版本的混淆文件，并且将之前版本的各个类的md5值（hash.txt解析而得）用map的形式存储返回给hashMap
                     Map hashMap = applyMapping(project, variant, proguardTask)
 
+                    //TODO 不知道和variant.name有什么区别
                     def dirName = variant.dirName
 
                     def rocooFixRootDir = new File("${project.projectDir}${File.separator}rocoofix${File.separator}version" + variant.getVersionCode())//project/rocoofix/version11
@@ -81,8 +84,8 @@ class RocooFixPlugin implements Plugin<Project> {
 //                    if(showLog) {
                     println("=========" + rocooFixRootDir);
                     println("=========" + outputDir);
-                    println("=========" + patchDir);
                     println("=========" + hashFile);
+                    println("=========" + patchDir);
                     println("==========" + variant.getVersionCode())
 //                    }
                     if (!rocooFixRootDir.exists()) {
@@ -108,12 +111,12 @@ class RocooFixPlugin implements Plugin<Project> {
                     }
                     def rocooPatchTask = project.tasks[rocooPatchTaskName]
 
-                    Closure prepareClosure = {
+                    Closure prepareClosure = {//改闭包执行一些初始化操作
                         if (rocooConfig.excludeClass == null) {
                             rocooConfig.excludeClass = Sets.newHashSet();
                         }
                         def applicationClassName = RocooUtils.getApplication(manifestFile);
-                        if (applicationClassName != null) {
+                        if (applicationClassName != null) {//排除Application类
                             applicationClassName = applicationClassName.replace(".", "/") + SdkConstants.DOT_CLASS
                             rocooConfig.excludeClass.add(applicationClassName)
                         }
@@ -121,6 +124,7 @@ class RocooFixPlugin implements Plugin<Project> {
                         if (rocooConfig.excludePackage == null) {
                             rocooConfig.excludePackage = Sets.newHashSet();
                         }
+                        //排除android/support包
                         rocooConfig.excludePackage.add("android/support/")
 
                         outputDir.mkdirs()
@@ -135,9 +139,10 @@ class RocooFixPlugin implements Plugin<Project> {
                     Closure copyMappingClosure = {
 
                         if (proguardTask) {
+                            //混淆文件的保存位置
                             def mapFile = new File("${project.buildDir}${File.separator}outputs${File.separator}mapping${File.separator}${variant.dirName}${File.separator}mapping.txt")
                             if (mapFile.exists()) {
-
+                                //将当前混淆文件copy到当前版本versionN文件夹下的mapping.txt文件中
                                 def newMapFile = new File("${rocooFixRootDir}${File.separator}${dirName}${File.separator}mapping.txt");
                                 FileUtils.copyFile(mapFile, newMapFile)
                             }
@@ -197,6 +202,7 @@ class RocooFixPlugin implements Plugin<Project> {
                     } else if (dexTask != null) {//此处代码应该注掉
                         def rocooJarBeforeDex = "rocooJarBeforeDex${variant.name.capitalize()}"
                         project.task(rocooJarBeforeDex) << {
+                            //TODO　获取inputFiles(具体细节看的还不是很懂)
                             Set<File> inputFiles = RocooUtils.getDexTaskInputFiles(project, variant, dexTask)
 
                             inputFiles.each { inputFile ->

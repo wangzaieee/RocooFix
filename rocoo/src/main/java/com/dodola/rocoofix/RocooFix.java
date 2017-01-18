@@ -86,10 +86,12 @@ public final class RocooFix {
         }
         String dexPath = null;
         try {
+            //将patch.jar从assets文件中拷贝出来，并返回其存储的目录
             dexPath = copyAsset(context, assetName, dexDir);
         } catch (IOException e) {
         } finally {
             if (dexPath != null && new File(dexPath).exists()) {
+                //加载补丁
                 applyPatch(context, dexPath);
             }
         }

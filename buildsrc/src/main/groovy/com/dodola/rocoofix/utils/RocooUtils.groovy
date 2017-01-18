@@ -147,7 +147,7 @@ public class RocooUtils {
 
     static String getDexTaskName(Project project, BaseVariant variant) {
         if (isUseTransformAPI(project)) {
-            return "transformClassesWithDexFor${variant.name.capitalize()}"
+            return "transformClassesWithDexFor${variant.name.capitalize()}"//variant.name若是'debug'那么variant.name.capitalize()就是'Debug'
         } else {
             return "dex${variant.name.capitalize()}"
         }
@@ -166,6 +166,7 @@ public class RocooUtils {
 
             dexTask.inputs.files.files.each {
                 if (it.exists()) {
+                    println "=================$it.absolutePath";
                     if (it.isDirectory()) {
                         Collection<File> jars = FileUtils.listFiles(it, extensions, true);
                         files.addAll(jars)
